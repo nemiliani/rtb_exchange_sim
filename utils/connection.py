@@ -19,7 +19,7 @@ class Connection(object):
     STATE_ERROR = 'ERROR'
 
     def __init__(self, address, loop):
-        self.qps = 0
+        self.current_qps = 0
         self.sock = None
         self.address = address
         self.buf = ''
@@ -27,14 +27,14 @@ class Connection(object):
         logging.debug("{0}: ready".format(self))
 
     def connect(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.setblocking(0)
-        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.setblocking(0)
+#        try:
             logging.debug('connecting to %s:%d' %
                             (self.address[0], self.address[1]))
-            self.sock.connect(self.address)
+            self.sock.connect(('localhost',9876))
             self.state = Connection.STATE_CONNECTED
-        except :
+#        except :
             logging.error('unable to connect to %s:%d' %  
                             (self.address[0], self.address[1]))
             self.state = Connection.STATE_ERROR

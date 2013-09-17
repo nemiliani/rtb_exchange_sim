@@ -29,7 +29,7 @@ class Exchange(object):
         '''
         # list containing tuples in the form 
         # (endpoint, expected qps, current qps)
-        self.dest_eps = [ (ep[0], ep[1], 0) for ep in dsp_endpoints]
+        self.dest_eps = [ [ep[0], ep[1], 0] for ep in dsp_endpoints]
         self.conns = {}
         self.balance_conn_to = balance_conn_timeout
         self.loop = pyev.default_loop()
@@ -78,17 +78,24 @@ class Exchange(object):
         for item in self.dest_eps :
             # check if the endpoint is registered or
             # if the current qps is lower than expected
+            endpoint = item[0]            
             qps = item[1] 
             current_qps = item[2]
-            if (item[0] not in self.conns) or (qps > current_qps) :
+            if (endpoint not in self.conns) or (qps > current_qps) :
                 # we don't seem to have any connections or we have
                 # not reached our expected qps yet, we should open
                 # another connection
                 if self.current_connections < MAX_CONNS :
-                    self.async_connect(item[0])
-            else :
-                pass                
-                
+                    self.async_connect(endpoint)
+                else :
+                    logging.warning('MAX_CONNS %d reachead' % MAX_CONNS)
+            if endpoint in self.conns :
+                # update current_qps
+                current = 0
+                for conn in self.conns[endpoint]:
+                    current = conn.current_qps 
+                item[2] = current
+
     def async_connect(self, endpoint):
         '''
             Asynchronously connect to an endpoint

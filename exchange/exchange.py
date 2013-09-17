@@ -46,6 +46,7 @@ class Exchange(object):
                                 self.check_established_connections))
         self.workers = {}
         self.queue = Queue.Queue()
+        self.current_connections = 0
 
     def signal_cb(self, watcher, revents):
         self.stop()
@@ -107,6 +108,13 @@ class Exchange(object):
                 logging.debug('deleting worker %d' % worker_id)
                 logging.debug('connection state %s' % conn.state)
                 del self.workers[worker_id]
+                ep_key = ':'.join([str(i) for i in conn.address])
+                if conn.state == Connection.STATE_CONNECTED:
+                    # save the connection                    
+                    self.conns[ep_key].append(conn)
+                    self.current_connections += 1
+                else :
+                    logging.error('Unable to connect to %s ' % ep_key)
             except Queue.Empty:
                 go = False
 

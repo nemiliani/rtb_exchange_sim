@@ -26,7 +26,9 @@ class Exchange(object):
             balance_conn_timeout : is the time period for rebalancing
                 available connections.
         '''
-        self.dest_eps = dsp_endpoints
+        # list containing tuples in the form 
+        # (endpoint, expected qps, current qps)
+        self.dest_eps = [ (ep[0], ep[1], 0) for ep in dsp_endpoints]
         self.conns = {}
         self.balance_conn_to = balance_conn_timeout
         self.loop = pyev.default_loop()

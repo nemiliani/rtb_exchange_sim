@@ -13,6 +13,7 @@ from utils import Worker, Connection
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
 NONBLOCKING = (errno.EAGAIN, errno.EWOULDBLOCK)
+MAX_CONNS = 20
 
 class Exchange(object):
 
@@ -74,11 +75,18 @@ class Exchange(object):
         '''
         logging.debug('balancing ...')
         for item in self.dest_eps :
-            # check if the endpoint is registered
-            if item[0] in self.conns :
-                pass
+            # check if the endpoint is registered or
+            # if the current qps is lower than expected
+            qps = item[1] 
+            current_qps = item[2]
+            if (item[0] not in self.conns) or (qps > current_qps) :
+                # we don't seem to have any connections or we have
+                # not reached our expected qps yet, we should open
+                # another connection
+                if self.current_connections < MAX_CONNS :
+                    self.async_connect(item[0])
             else :
-                self.async_connect(item[0])
+                pass                
                 
     def async_connect(self, endpoint):
         '''

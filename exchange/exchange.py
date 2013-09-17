@@ -9,7 +9,7 @@ import weakref
 import threading
 import Queue
 
-from utils import Worker, Connection
+from utils import Worker, WorkerPool, Connection
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
 NONBLOCKING = (errno.EAGAIN, errno.EWOULDBLOCK)
@@ -50,6 +50,7 @@ class Exchange(object):
         self.workers = {}
         self.queue = Queue.Queue()
         self.current_connections = 0
+        self.worker_pool = WorkerPool(self.queue, 5)
 
     def signal_cb(self, watcher, revents):
         self.stop()
@@ -99,13 +100,13 @@ class Exchange(object):
         conn = Connection(ep, self.loop)
         # create the entry
         self.conns[endpoint] = []
-        w = Worker(conn, self.queue)
-        t = threading.Thread(target=w.do)
-        # map the process and worker
-        logging.debug('worker %d created' % w.id)
+        w = self.worker_pool.get_worker()
+        if not w :
+            logging.warning('Worker pool exausted')
+            return     
+        w.conn = conn
         self.workers[w.id] = w
-        # run it
-        t.start()
+        w.run()
 
 
     def check_established_connections(self, watcher, revents):
@@ -117,6 +118,7 @@ class Exchange(object):
                 worker_id, conn = self.queue.get_nowait()                
                 logging.debug('deleting worker %d' % worker_id)
                 logging.debug('connection state %s' % conn.state)
+                self.worker_pool.set_worker(self.workers[worker_id])
                 del self.workers[worker_id]
                 ep_key = ':'.join([str(i) for i in conn.address])
                 if conn.state == Connection.STATE_CONNECTED:

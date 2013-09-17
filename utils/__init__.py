@@ -1,2 +1,2 @@
-from worker import Worker
+from worker import Worker, WorkerPool
 from connection import Connection

@@ -9,11 +9,10 @@ import weakref
 import threading
 import Queue
 
-from utils import Worker, WorkerPool, Connection
+from utils import Worker, WorkerPool, Connection, NONBLOCKING
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
-NONBLOCKING = (errno.EAGAIN, errno.EWOULDBLOCK)
-MAX_CONNS = 20
+MAX_CONNS = 1
 
 class Exchange(object):
 
@@ -31,6 +30,7 @@ class Exchange(object):
         # (endpoint, expected qps, current qps)
         self.dest_eps = [ [ep[0], ep[1], 0] for ep in dsp_endpoints]
         self.conns = {}
+        self.awaiting_conns = {}
         self.balance_conn_to = balance_conn_timeout
         self.loop = pyev.default_loop()
         self.watchers = [pyev.Signal(sig, self.loop, self.signal_cb)
@@ -47,10 +47,7 @@ class Exchange(object):
                                 self.balance_conn_to, 
                                 self.loop,
                                 self.check_established_connections))
-        self.workers = {}
-        self.queue = Queue.Queue()
         self.current_connections = 0
-        self.worker_pool = WorkerPool(self.queue, 5)
 
     def signal_cb(self, watcher, revents):
         self.stop()
@@ -100,40 +97,45 @@ class Exchange(object):
         '''
             Asynchronously connect to an endpoint
         '''
-        # create the first connection
+        # create the connection
         logging.debug('launching async_connect to %s' % endpoint)
         ep = endpoint.split(':')
         ep = (ep[0], int(ep[1]))        
-        conn = Connection(ep, self.loop)
+        conn = Connection(self, ep, self.loop)
+        self.awaiting_conns[conn.id] = conn
+        self.current_connections += 1
         # create the entry
-        self.conns[endpoint] = []
-        w = self.worker_pool.get_worker()
-        if not w :
-            logging.warning('Worker pool exausted')
-            return     
-        w.conn = conn
-        self.workers[w.id] = w
-        w.run()
-
+        if endpoint not in self.conns :
+            self.conns[endpoint] = []
+        state = conn.connect()
+        if state == Connection.STATE_CONNECTING:
+           logging.debug('connecting!')
 
     def check_established_connections(self, watcher, revents):
         logging.debug('checking connections')
-        # check any of the workers are done
-        go = True        
-        while go :
-            try :
-                worker_id, conn = self.queue.get_nowait()                
-                logging.debug('deleting worker %d' % worker_id)
-                logging.debug('connection state %s' % conn.state)
-                self.worker_pool.set_worker(self.workers[worker_id])
-                del self.workers[worker_id]
-                ep_key = ':'.join([str(i) for i in conn.address])
-                if conn.state == Connection.STATE_CONNECTED:
-                    # save the connection                    
-                    self.conns[ep_key].append(conn)
-                    self.current_connections += 1
-                else :
-                    logging.error('Unable to connect to %s ' % ep_key)
-            except Queue.Empty:
-                go = False
+        # check if any of the awaiting_conns are done
+        for cid, conn in self.awaiting_conns.items():
+            ep_key = ':'.join([str(i) for i in conn.address])
+            if conn.state == Connection.STATE_CONNECTED:
+                logging.info('connected to %s ' % ep_key)                
+                # save the connection                    
+                self.conns[ep_key].append(conn)
+                # remove from awaiting_conns
+                del self.awaiting_conns[cid]
+            elif conn.state == Connection.STATE_CONNECTING:
+                logging.info('still trying to connect to %s ' % ep_key)
+            else :
+                logging.error('unable to connect to %s ' % ep_key)
+                # remove from awaiting_conns
+                self.awaiting_conns[cid].close()
+                del self.awaiting_conns[cid]
+                self.current_connections -= 1
+                logging.error('unable to connect to end')
+
+
+    def remove_connection(self, conn):
+        logging.error('removing connection %d' % conn.id)
+        self.current_connections -= 1
+        ep_key = ':'.join([str(i) for i in conn.address])
+        self.conns[ep_key].remove(conn)
 

@@ -23,11 +23,13 @@ class Connection(object):
 
     def __init__(self, exchange, address, loop):
         self.exchange = exchange
+        self.last_qps = 0    
         self.current_qps = 0
         self.sock = None
         self.watcher = None
         self.address = address
-        self.buf = 'Hola'
+        self.count = 0
+        self.buf = 'Hola_%d' % self.count
         self.state = Connection.STATE_NOT_CONNECTED
         self.loop = loop
         self.id = Connection._id
@@ -46,9 +48,20 @@ class Connection(object):
             self.state = Connection.STATE_ERROR
         else:
             self.state = Connection.STATE_CONNECTING
-            self.watcher = pyev.Io(self.sock, pyev.EV_WRITE, self.loop, self.io_cb)
+            self.watcher = pyev.Io(
+                    self.sock, 
+                    pyev.EV_WRITE, 
+                    self.loop, 
+                    self.io_cb)
             self.watcher.start()
+            # start the timer
+            self.timer = pyev.Timer(1, 1, self.loop, self.set_qps)
+            self.timer.start()
         return self.state
+
+    def set_qps(self, watcher, revents):
+        self.last_qps = self.current_qps
+        self.current_qps = 0        
 
     def reset(self, events):
         self.watcher.stop()
@@ -71,8 +84,8 @@ class Connection(object):
             if err.args[0] not in NONBLOCKING:
                 self.handle_error("error reading from {0}".format(self.sock))
         if buf:
-            self.buf += buf
-            #self.reset(pyev.EV_READ | pyev.EV_WRITE)
+            self.current_qps += 1
+            self.reset(pyev.EV_WRITE)
         else:
             self.handle_error("connection closed by peer", logging.DEBUG, False)
 
@@ -89,6 +102,8 @@ class Connection(object):
                 self.state = Connection.STATE_CONNECTED
             self.buf = self.buf[sent:]
             if not self.buf:
+                self.buf = 'Hola_%d' % self.count                
+                self.count += 1
                 self.reset(pyev.EV_READ)
 
     def io_cb(self, watcher, revents):
@@ -102,6 +117,8 @@ class Connection(object):
         if self.watcher :
             self.watcher.stop()
             self.watcher = None
+            self.timer.stop()
+            self.timer = None
         logging.debug("{0}: closed".format(self))
 
 

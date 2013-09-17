@@ -72,12 +72,21 @@ class Exchange(object):
             Check your connections and balance
         '''
         logging.debug('balancing ...')
+        
         for item in self.dest_eps :
+            #load up
+            endpoint = item[0]            
+            qps = item[1]
+            # update current_qps
+            if endpoint in self.conns :
+                current = 0
+                for conn in self.conns[endpoint]:
+                    current += conn.last_qps 
+                item[2] = current
+            current_qps = item[2]
+            logging.info('qps=%d endpoint=%s' % (current_qps, endpoint))
             # check if the endpoint is registered or
             # if the current qps is lower than expected
-            endpoint = item[0]            
-            qps = item[1] 
-            current_qps = item[2]
             if (endpoint not in self.conns) or (qps > current_qps) :
                 # we don't seem to have any connections or we have
                 # not reached our expected qps yet, we should open
@@ -85,13 +94,7 @@ class Exchange(object):
                 if self.current_connections < MAX_CONNS :
                     self.async_connect(endpoint)
                 else :
-                    logging.warning('MAX_CONNS %d reachead' % MAX_CONNS)
-            if endpoint in self.conns :
-                # update current_qps
-                current = 0
-                for conn in self.conns[endpoint]:
-                    current = conn.current_qps 
-                item[2] = current
+                    logging.warning('MAX_CONNS %d reached' % MAX_CONNS)
 
     def async_connect(self, endpoint):
         '''

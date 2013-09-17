@@ -5,21 +5,26 @@ import errno
 import logging
 import pyev
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING, 
+                    format='%(asctime)-15s %(levelname)s %(message)s')
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
 NONBLOCKING = (errno.EAGAIN, errno.EWOULDBLOCK)
 
+RESPONSE_TIMEOUT = 0.02
 
 class Connection(object):
 
     def __init__(self, sock, address, loop):
+        self.loop = loop
         self.sock = sock
         self.address = address
         self.sock.setblocking(0)
         self.buf = ""
         self.watcher = pyev.Io(self.sock, pyev.EV_READ, loop, self.io_cb)
         self.watcher.start()
+        self.timer = pyev.Timer(
+            RESPONSE_TIMEOUT, RESPONSE_TIMEOUT, self.loop, self.reset_write)
         logging.debug("{0}: ready".format(self))
 
     def reset(self, events):
@@ -40,10 +45,16 @@ class Connection(object):
             if err.args[0] not in NONBLOCKING:
                 self.handle_error("error reading from {0}".format(self.sock))
         if buf:
+            logging.info('starting timer for buff %s' % self.buf)
             self.buf += buf
-            self.reset(pyev.EV_READ | pyev.EV_WRITE)
+            self.timer.start()
         else:
             self.handle_error("connection closed by peer", logging.DEBUG, False)
+
+    def reset_write(self,  watcher, revents):
+        logging.info('stoping timer for buff %s' % self.buf)
+        self.timer.stop()      
+        self.reset(pyev.EV_WRITE)
 
     def handle_write(self):
         try:

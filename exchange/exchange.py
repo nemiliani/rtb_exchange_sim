@@ -43,8 +43,8 @@ class Exchange(object):
                                 self.balance))
 
         self.watchers.append(pyev.Timer(
-                                self.balance_conn_to, 
-                                self.balance_conn_to, 
+                                1, 
+                                1, 
                                 self.loop,
                                 self.check_established_connections))
         self.current_connections = 0

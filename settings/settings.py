@@ -1,5 +1,8 @@
 import logging
 
+# Plugin imports
+from plugin.rubicon_plugin import RubiconPlugin
+
 # Max connections allowed for the process
 MAX_CONNS = 100
 
@@ -7,7 +10,7 @@ MAX_CONNS = 100
 #  - endpoint souhld be a string 'host:port'
 #  - expected_qps is the amount of qps expected for the endpoint
 ENDPOINT_LIST = [
-    ('localhost:9876', 3000),
+    ('localhost:9876', 1),
 ]
 
 # Balance time out indicating the period in seconds 
@@ -23,6 +26,17 @@ CHECK_CONNS_TO = 1
 # - logging.INFO
 # - logging.WARNING
 # - logging.ERROR
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 
 
+# Indicates the minimum auction id
+BOTTOM_AUCTION_ID = 10000000000000
+
+# Indicates the maximum auction id
+TOP_AUCTION_ID = 99999999999999
+
+# Parameter plugin
+PARAMETER_PLUGIN = RubiconPlugin
+
+# RTB request template filename
+TEMPLATE_FILENAME = 'templates/rubicon.template'

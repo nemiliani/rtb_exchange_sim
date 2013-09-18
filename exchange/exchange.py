@@ -12,7 +12,7 @@ import Queue
 from utils import Worker, WorkerPool, Connection, NONBLOCKING
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
-MAX_CONNS = 1
+MAX_CONNS = 100
 
 class Exchange(object):
 

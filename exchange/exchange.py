@@ -10,9 +10,10 @@ import threading
 import Queue
 
 from utils import Worker, WorkerPool, Connection, NONBLOCKING
+from settings import MAX_CONNS, CHECK_CONNS_TO
+
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
-MAX_CONNS = 100
 
 class Exchange(object):
 
@@ -43,8 +44,8 @@ class Exchange(object):
                                 self.balance))
 
         self.watchers.append(pyev.Timer(
-                                1, 
-                                1, 
+                                CHECK_CONNS_TO, 
+                                CHECK_CONNS_TO, 
                                 self.loop,
                                 self.check_established_connections))
         self.current_connections = 0

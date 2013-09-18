@@ -1,11 +1,12 @@
 from exchange import Exchange
 import logging
 
+from settings import ENDPOINT_LIST, BALANCE_TO, LOG_LEVEL
 
 if __name__ == '__main__':
 
     logging.basicConfig(
-            level=logging.INFO, 
+            level=LOG_LEVEL, 
             format='%(asctime)-15s %(levelname)s %(message)s')
-    x = Exchange([('localhost:9876',5), ], 3)
+    x = Exchange(ENDPOINT_LIST , BALANCE_TO)
     x.start()

@@ -10,8 +10,9 @@ import threading
 import Queue
 
 from utils import Worker, WorkerPool, Connection, NONBLOCKING
-from settings import MAX_CONNS, CHECK_CONNS_TO
-
+from settings import MAX_CONNS, CHECK_CONNS_TO, BOTTOM_AUCTION_ID, TOP_AUCTION_ID, \
+                    TEMPLATE_FILENAME, PARAMETER_PLUGIN
+from rtb import RTBRequestFactory
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
 
@@ -49,6 +50,12 @@ class Exchange(object):
                                 self.loop,
                                 self.check_established_connections))
         self.current_connections = 0
+        self.request_fact = RTBRequestFactory(
+                                    BOTTOM_AUCTION_ID,
+                                    TOP_AUCTION_ID,
+                                    TEMPLATE_FILENAME)
+        self.request_fact.initialize()
+        self.request_fact.set_parameter_plug(PARAMETER_PLUGIN)
 
     def signal_cb(self, watcher, revents):
         self.stop()

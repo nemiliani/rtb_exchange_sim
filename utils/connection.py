@@ -28,8 +28,7 @@ class Connection(object):
         self.sock = None
         self.watcher = None
         self.address = address
-        self.count = 0
-        self.buf = 'Hola_%d' % self.count
+        self.buf = ''
         self.state = Connection.STATE_NOT_CONNECTED
         self.loop = loop
         self.id = Connection._id
@@ -91,6 +90,8 @@ class Connection(object):
 
     def handle_write(self):
         try:
+            logging.debug('handling write')
+            self.buf += self.exchange.request_fact.create_request()
             logging.debug('sending %s' % self.buf)
             sent = self.sock.send(self.buf)
         except socket.error as err:
@@ -102,8 +103,6 @@ class Connection(object):
                 self.state = Connection.STATE_CONNECTED
             self.buf = self.buf[sent:]
             if not self.buf:
-                self.buf = 'Hola_%d' % self.count                
-                self.count += 1
                 self.reset(pyev.EV_READ)
 
     def io_cb(self, watcher, revents):

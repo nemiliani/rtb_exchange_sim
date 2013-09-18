@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from exchange import Exchange
 import logging
 

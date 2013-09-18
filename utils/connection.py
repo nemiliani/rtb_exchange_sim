@@ -69,8 +69,8 @@ class Connection(object):
         self.watcher.start()
 
     def handle_error(self, msg, level=logging.ERROR, exc_info=True):
-        logging.log(level, "{0}: {1} --> closing".format(self, msg),
-                    exc_info=exc_info)
+        logging.error("{0}: {1} --> closing".format(self, msg),
+                             exc_info=exc_info)
         self.close()
         if self.state != Connection.STATE_CONNECTING:    
             self.exchange.remove_connection(self)

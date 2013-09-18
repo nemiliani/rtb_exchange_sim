@@ -84,7 +84,8 @@ class Exchange(object):
                     current += conn.last_qps 
                 item[2] = current
             current_qps = item[2]
-            logging.info('qps=%d endpoint=%s' % (current_qps, endpoint))
+            logging.info('qps=%d endpoint=%s conns=%d' % 
+                            (current_qps, endpoint, self.current_connections))
             # check if the endpoint is registered or
             # if the current qps is lower than expected
             if (endpoint not in self.conns) or (qps > current_qps) :

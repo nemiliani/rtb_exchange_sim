@@ -39,4 +39,4 @@ TOP_AUCTION_ID = 99999999999999
 PARAMETER_PLUGIN = RubiconPlugin
 
 # RTB request template filename
-TEMPLATE_FILENAME = 'templates/rubicon.template'
+TEMPLATE_FILENAME = 'templates/request.template'

@@ -8,5 +8,5 @@ class ParameterPlugin(object):
     def initialize(self):
         raise NotImplementedError('initialize must be implemeted')
 
-    def do_parameters(self, parameters):
+    def get_request(self):
         raise NotImplementedError('do_parameters must be implemeted')

@@ -46,15 +46,19 @@ class RTBRequestFactory(object):
         '''
             Create a request and call the parameter plugin
         '''
-        logging.debug('create_request')        
-        parameters = {}
-        aid = None        
-        if set_aid :
-            aid = self.get_next_auction_id()
-            parameters['AUCTION_ID'] = aid
+        logging.debug('create_request')
+        aid = None
+        req_line = ''
+        headers = {}
+        body = ''
         if self.plugin_instance :
-            self.plugin_instance.do_parameters(parameters)
-        req = RTBRequest(aid, parameters, self.template)
+            aid, req_line, headers, body = \
+                self.plugin_instance.get_request()
+        req = RTBRequest(aid, 
+                        self.template, 
+                        req_line, 
+                        headers, 
+                        body)
         self.requests[req.auction_id] = req
-        return req.build()[:-2]
+        return req.build()
         

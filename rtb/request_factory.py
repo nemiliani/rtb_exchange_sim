@@ -56,5 +56,5 @@ class RTBRequestFactory(object):
             self.plugin_instance.do_parameters(parameters)
         req = RTBRequest(aid, parameters, self.template)
         self.requests[req.auction_id] = req
-        return req.build()
+        return req.build()[:-2]
         

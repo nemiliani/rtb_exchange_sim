@@ -10,7 +10,7 @@ import threading
 import Queue
 
 from utils import Worker, WorkerPool, Connection, NONBLOCKING
-from settings import MAX_CONNS, CHECK_CONNS_TO, BOTTOM_AUCTION_ID, TOP_AUCTION_ID, \
+from settings import MAX_CONNS, CHECK_CONNS_TO, \
                     TEMPLATE_FILENAME, PARAMETER_PLUGIN
 from rtb import RTBRequestFactory
 
@@ -51,8 +51,6 @@ class Exchange(object):
                                 self.check_established_connections))
         self.current_connections = 0
         self.request_fact = RTBRequestFactory(
-                                    BOTTOM_AUCTION_ID,
-                                    TOP_AUCTION_ID,
                                     TEMPLATE_FILENAME)
         self.request_fact.initialize()
         self.request_fact.set_parameter_plug(PARAMETER_PLUGIN)

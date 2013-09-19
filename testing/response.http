@@ -1,0 +1,16 @@
+HTTP/1.1 200 OK
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: Fri, 01 Jan 1990 00:00:00 GMT
+Date: Thu, 19 Sep 2013 17:13:22 GMT
+Content-Type: text/xml; charset=UTF-8
+X-Daystart: 36802
+Content-Encoding: gzip
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+Content-Length: 4
+Server: GSE
+Alternate-Protocol: 80:quic
+
+hola

@@ -1,0 +1,9 @@
+Content-Encoding: gzip
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+Content-Length: 4
+Server: GSE
+Alternate-Protocol: 80:quic
+
+hola

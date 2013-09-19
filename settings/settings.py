@@ -28,13 +28,6 @@ CHECK_CONNS_TO = 1
 # - logging.ERROR
 LOG_LEVEL = logging.DEBUG
 
-
-# Indicates the minimum auction id
-BOTTOM_AUCTION_ID = 10000000000000
-
-# Indicates the maximum auction id
-TOP_AUCTION_ID = 99999999999999
-
 # Parameter plugin
 PARAMETER_PLUGIN = RubiconPlugin
 

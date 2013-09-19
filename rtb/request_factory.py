@@ -23,17 +23,6 @@ class RTBRequestFactory(object):
         # read the template file        
         self.template = Template(filename=self.template_file)
     
-    def get_next_auction_id(self):
-        '''
-            Get the next auction id
-        '''                
-        aid = random.randint(
-                self.bottom_aid, self.top_aid)
-        while aid in self.requests :
-            aid = random.randint(
-                self.bottom_aid, self.top_aid)
-        return aid
-    
     def set_parameter_plug(self, plugin):
         '''
             Set a param class plugin, this must implement

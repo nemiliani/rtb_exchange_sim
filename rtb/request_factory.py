@@ -3,6 +3,7 @@ import random
 import logging
 
 from request import RTBRequest
+from response import RTBResponse
 
 class RTBRequestFactory(object):
     '''
@@ -45,4 +46,27 @@ class RTBRequestFactory(object):
                         body)
         self.requests[req.auction_id] = req
         return req.build()
+
+    def receive_response(self, buf):
+        '''
+            Receives a response buffer and checks if 
+            it has a full HTTP response, if it does
+            it invokes the plugin and returns an empty
+            buffer, otherwise the buffer is returned as
+            it was passed
+        '''
+        logging.debug('receive_response')
+        response = RTBResponse()
+        ok, parser = response.receive_buffer(buf)
+        if ok :
+            if self.plugin_instance :
+                self.plugin_instance.receive_response(
+                    parser.get_status_code(), 
+                    parser.get_headers(), 
+                    parser.recv_body())
+            return ''
+        else:
+            return buf            
         
+
+

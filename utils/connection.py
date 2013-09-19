@@ -29,6 +29,7 @@ class Connection(object):
         self.watcher = None
         self.address = address
         self.buf = ''
+        self.read_buf = ''
         self.state = Connection.STATE_NOT_CONNECTED
         self.loop = loop
         self.id = Connection._id
@@ -77,14 +78,24 @@ class Connection(object):
         
     def handle_read(self):
         try:
-            buf = self.sock.recv(1024)
-            logging.debug('reading %s' % buf)
+            self.read_buf += self.sock.recv(1024)
+            logging.debug('reading %s' % self.read_buf)
         except socket.error as err:
             if err.args[0] not in NONBLOCKING:
                 self.handle_error("error reading from {0}".format(self.sock))
-        if buf:
-            self.current_qps += 1
-            self.reset(pyev.EV_WRITE)
+        if self.read_buf:
+            buf = self.exchange.request_fact.receive_response(self.read_buf)
+            # was it a full response ?           
+            if not buf :
+                # we got a full response                
+                self.current_qps += 1
+                self.read_buf = ''
+                self.reset(pyev.EV_WRITE)
+            else :
+                # we got a partial response keep on reading
+                logging.debug('partial bffer received' % self.read_buf)
+                self.read_buf += buf
+                self.reset(pyev.EV_READ)
         else:
             self.handle_error("connection closed by peer", logging.DEBUG, False)
 

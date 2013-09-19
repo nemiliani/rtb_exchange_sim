@@ -10,3 +10,6 @@ class ParameterPlugin(object):
 
     def get_request(self):
         raise NotImplementedError('do_parameters must be implemeted')
+
+    def receive_response(self, status_code, headers, body):
+        raise NotImplementedError('receive_response must be implemeted')

@@ -91,7 +91,8 @@ class Connection(object):
     def handle_write(self):
         try:
             logging.debug('handling write')
-            self.buf += self.exchange.request_fact.create_request()
+            if not self.buf :
+                self.buf += self.exchange.request_fact.create_request()            
             logging.debug('sending %s' % self.buf)
             sent = self.sock.send(self.buf)
         except socket.error as err:
@@ -103,7 +104,14 @@ class Connection(object):
                 self.state = Connection.STATE_CONNECTED
             self.buf = self.buf[sent:]
             if not self.buf:
+                # all the request buffer was sent, 
+                # let's wait for the response
                 self.reset(pyev.EV_READ)
+            else :
+                # there is still some buffer left, 
+                # wait for the write event again
+                logging.info('partial buffer sent')
+                self.reset(pyev.EV_WRITE)
 
     def io_cb(self, watcher, revents):
         if revents & pyev.EV_READ:

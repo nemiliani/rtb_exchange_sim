@@ -22,8 +22,20 @@ class RubiconPlugin(ParameterPlugin):
         aid = random.randint(10000000000000, 99999999999999)        
         body = '{"aid":%d}' % aid
         headers['Content-Length'] = str(len(body))
-        return (aid, req_line, headers, body)
+        return (req_line, headers, body)
 
     def receive_response(self, status_code, headers, body):
         logging.debug('plugin.receive_response')
-        print body
+        # throw the dice to see if it's a winner                
+        win = random.randint(0, 9) < 5
+        req_line = ''
+        headers = {}
+        body = ''
+        if not win :
+            return (False, req_line, headers, body)
+        # we won, we need to return True with all
+        # all the data used to construct the win
+        # notification
+        return (True, req_line, headers, body)
+
+    

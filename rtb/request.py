@@ -3,13 +3,11 @@ class RTBRequest(object):
     '''
         Represents a request
     '''
-    def __init__(self,
-                 aid, 
+    def __init__(self, 
                  template, 
                  req_line, 
                  headers, 
-                 body):
-        self.auction_id = aid        
+                 body):        
         self.template = template
         self.req_line = req_line
         self.headers = headers

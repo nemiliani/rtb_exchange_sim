@@ -154,7 +154,10 @@ class Exchange(object):
         logging.error('removing connection %d' % conn.id)
         self.current_connections -= 1
         ep_key = ':'.join([str(i) for i in conn.address])
-        self.conns[ep_key].remove(conn)
+        try :
+            self.conns[ep_key].remove(conn)
+        except ValueError:
+            logging.info('connection %d was not yet persisted' % conn.id)
 
     def receive_response(self, read_buf):
         logging.debug('ex.receive_response')

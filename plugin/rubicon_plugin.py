@@ -46,3 +46,6 @@ class RubiconPlugin(ParameterPlugin):
         body = '{"aid":%d}' % aid
         headers['Content-Length'] = str(len(body))
         return (True, req_line, headers, body)
+
+    def receive_win_response(self, status_code, headers, body):
+        pass

@@ -13,3 +13,6 @@ class ParameterPlugin(object):
 
     def receive_response(self, status_code, headers, body):
         raise NotImplementedError('receive_response must be implemeted')
+
+    def receive_win_response(self, status_code, headers, body):
+        raise NotImplementedError('receive_win_response must be implemeted')

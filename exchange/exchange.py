@@ -10,7 +10,7 @@ import threading
 import Queue
 
 from utils import Worker, WorkerPool, Connection, NONBLOCKING
-from settings import MAX_CONNS, CHECK_CONNS_TO, \
+from settings import MAX_CONNS, MAX_EVENT_CONNS, CHECK_CONNS_TO, \
                     TEMPLATE_FILENAME, PARAMETER_PLUGIN
 from rtb import RTBRequestFactory
 
@@ -34,6 +34,8 @@ class Exchange(object):
         self.event_endpoint = event_endpoint
         self.conns = {}
         self.awaiting_conns = {}
+        self.event_conns = {}
+        self.awaiting_event_conns = {}
         self.balance_conn_to = balance_conn_timeout
         self.loop = pyev.default_loop()
         self.watchers = [pyev.Signal(sig, self.loop, self.signal_cb)
@@ -69,12 +71,12 @@ class Exchange(object):
         '''
             Start watchers and loop
         '''
+        # start generic watchers for times and signals        
         for watcher in self.watchers:
             watcher.start()
         logging.debug("{0}: started".format(self))
         self.loop.start()
         
-
     def balance(self, watcher, revents):
         '''
             Check your connections and balance
@@ -105,20 +107,24 @@ class Exchange(object):
                 else :
                     logging.warning('MAX_CONNS %d reached' % MAX_CONNS)
 
-    def async_connect(self, endpoint):
+    def async_connect(self, endpoint, event_endpoint=False):
         '''
             Asynchronously connect to an endpoint
         '''
         # create the connection
         logging.debug('launching async_connect to %s' % endpoint)
         ep = endpoint.split(':')
-        ep = (ep[0], int(ep[1]))        
+        ep = (ep[0], int(ep[1]))
+        connect_cb = None
+        if event_endpoint :
+            connect_cb = self.event_connection_done
         conn = Connection(
                 ep, 
                 self.loop, 
                 self.create_request, 
                 self.receive_response, 
-                self.remove_connection)
+                self.remove_connection,
+                connect_cb)
         self.awaiting_conns[conn.id] = conn
         self.current_connections += 1
         # create the entry
@@ -127,6 +133,9 @@ class Exchange(object):
         state = conn.connect()
         if state == Connection.STATE_CONNECTING:
            logging.debug('connecting!')
+
+    def event_connection_done(self, watcher, revents):
+        pass
 
     def check_established_connections(self, watcher, revents):
         logging.debug('checking connections')
@@ -165,11 +174,29 @@ class Exchange(object):
             self.request_fact.receive_response(read_buf)
         if (not buf) and win :
             # the buf was a full response and the 
-            # auction was won
-            pass    
-        return buf
+            # auction was won, call the request factory
+            # to create a win request notification
+            buf = self.request_fact.create_win_request(
+                                            req_line, headers, body)
+            # send it            
+            self.send_win_notification(buf)
+            return ''
+        elif buf and win is None:
+            # this means that the buf was not a complete response
+            return buf
+        else:
+            # this means that the buf was  a complete response
+            # but we did not win
+            return ''
 
     def create_request(self):
         logging.debug('ex.create_request')
-        return self.request_fact.create_request()
+        return self.request_fact.create_request()    
+
+    def receive_win_response(self, read_buf):
+        logging.debug('ex.receive_win_response')
+        return self.request_fact.receive_win_response(read_buf)
+
+    def send_win_notification(self, buf):
+        pass
 

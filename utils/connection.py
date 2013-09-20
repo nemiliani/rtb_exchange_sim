@@ -84,6 +84,7 @@ class Connection(object):
         
     def handle_read(self):
         try:
+            logging.debug('handling read')
             self.read_buf += self.sock.recv(1024)
             logging.debug('reading %s' % self.read_buf)
         except socket.error as err:
@@ -97,9 +98,9 @@ class Connection(object):
                 self.current_qps += 1
                 self.read_buf = ''
                 self.reset(pyev.EV_WRITE)
-            else :
+            else : 
                 # we got a partial response keep on reading
-                logging.debug('partial bffer received' % self.read_buf)
+                logging.debug('partial buffer received %s' % self.read_buf)
                 self.read_buf += buf
                 self.reset(pyev.EV_READ)
         else:

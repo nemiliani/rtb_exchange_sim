@@ -113,7 +113,12 @@ class Exchange(object):
         logging.debug('launching async_connect to %s' % endpoint)
         ep = endpoint.split(':')
         ep = (ep[0], int(ep[1]))        
-        conn = Connection(self, ep, self.loop)
+        conn = Connection(
+                ep, 
+                self.loop, 
+                self.create_request, 
+                self.receive_response, 
+                self.remove_connection)
         self.awaiting_conns[conn.id] = conn
         self.current_connections += 1
         # create the entry

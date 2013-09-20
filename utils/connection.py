@@ -21,8 +21,12 @@ class Connection(object):
     
     _id = 1
 
-    def __init__(self, exchange, address, loop):
-        self.exchange = exchange
+    def __init__(self, address, loop, 
+            request_cb, response_cb, error_cb, connect_cb=None):
+        self.request_cb = request_cb
+        self.response_cb = response_cb
+        self.error_cb = error_cb
+        self.connect_cb = connect_cb
         self.last_qps = 0    
         self.current_qps = 0
         self.sock = None
@@ -47,12 +51,14 @@ class Connection(object):
                             (self.address[0], self.address[1]))
             self.state = Connection.STATE_ERROR
         else:
+            if not self.connect_cb:
+                self.connect_cb = self.io_cb 
             self.state = Connection.STATE_CONNECTING
             self.watcher = pyev.Io(
                     self.sock, 
                     pyev.EV_WRITE, 
                     self.loop, 
-                    self.io_cb)
+                    self.connect_cb)
             self.watcher.start()
             # start the timer
             self.timer = pyev.Timer(1, 1, self.loop, self.set_qps)
@@ -73,7 +79,7 @@ class Connection(object):
                              exc_info=exc_info)
         self.close()
         if self.state != Connection.STATE_CONNECTING:    
-            self.exchange.remove_connection(self)
+            self.error_cb(self)
         self.state = Connection.STATE_ERROR
         
     def handle_read(self):
@@ -84,7 +90,7 @@ class Connection(object):
             if err.args[0] not in NONBLOCKING:
                 self.handle_error("error reading from {0}".format(self.sock))
         if self.read_buf:
-            buf = self.exchange.receive_response(self.read_buf)
+            buf = self.response_cb(self.read_buf)
             # was it a full response ?           
             if not buf :
                 # we got a full response                
@@ -103,7 +109,7 @@ class Connection(object):
         try:
             logging.debug('handling write')
             if not self.buf :
-                self.buf += self.exchange.create_request()            
+                self.buf += self.request_cb()            
             logging.debug('sending %s' % self.buf)
             sent = self.sock.send(self.buf)
         except socket.error as err:

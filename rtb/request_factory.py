@@ -57,13 +57,14 @@ class RTBRequestFactory(object):
         ok, parser = response.receive_buffer(buf)
         if ok :
             if self.plugin_instance :
-                self.plugin_instance.receive_response(
-                    parser.get_status_code(), 
-                    parser.get_headers(), 
-                    parser.recv_body())
-            return ''
+               win, req_line, headers, body = \
+                     self.plugin_instance.receive_response(
+                        parser.get_status_code(), 
+                        parser.get_headers(), 
+                        parser.recv_body())
+            return ('', win, req_line, headers, body)
         else:
-            return buf            
+            return (buf, None, None, None, None)
         
 
 

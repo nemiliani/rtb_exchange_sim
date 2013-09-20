@@ -151,7 +151,13 @@ class Exchange(object):
 
     def receive_response(self, read_buf):
         logging.debug('ex.receive_response')
-        return self.request_fact.receive_response(read_buf)
+        buf, win, req_line, headers, body = \ 
+            self.request_fact.receive_response(read_buf)
+        if (not buf) and win :
+            # the buf was a full response and the 
+            # auction was won
+            pass    
+        return buf
 
     def create_request(self):
         logging.debug('ex.create_request')

@@ -36,6 +36,13 @@ class RubiconPlugin(ParameterPlugin):
         # we won, we need to return True with all
         # all the data used to construct the win
         # notification
+        req_line = 'GET / HTTP/1.1'
+        headers = {}
+        headers['Host'] = 'localhost'         
+        headers['Connection'] = 'keep-alive'
+        headers['Accept'] = '*/*'
+        headers['Content-Type'] = 'application/json'
+        aid = random.randint(10000000000000, 99999999999999)        
+        body = '{"aid":%d}' % aid
+        headers['Content-Length'] = str(len(body))
         return (True, req_line, headers, body)
-
-    

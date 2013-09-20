@@ -149,3 +149,11 @@ class Exchange(object):
         ep_key = ':'.join([str(i) for i in conn.address])
         self.conns[ep_key].remove(conn)
 
+    def receive_response(self, read_buf):
+        logging.debug('ex.receive_response')
+        return self.request_fact.receive_response(read_buf)
+
+    def create_request(self):
+        logging.debug('ex.create_request')
+        return self.request_fact.create_request()
+

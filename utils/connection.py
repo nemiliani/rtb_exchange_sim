@@ -84,7 +84,7 @@ class Connection(object):
             if err.args[0] not in NONBLOCKING:
                 self.handle_error("error reading from {0}".format(self.sock))
         if self.read_buf:
-            buf = self.exchange.request_fact.receive_response(self.read_buf)
+            buf = self.exchange.receive_response(self.read_buf)
             # was it a full response ?           
             if not buf :
                 # we got a full response                
@@ -103,7 +103,7 @@ class Connection(object):
         try:
             logging.debug('handling write')
             if not self.buf :
-                self.buf += self.exchange.request_fact.create_request()            
+                self.buf += self.exchange.create_request()            
             logging.debug('sending %s' % self.buf)
             sent = self.sock.send(self.buf)
         except socket.error as err:

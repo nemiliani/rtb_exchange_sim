@@ -18,7 +18,7 @@ STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
 
 class Exchange(object):
 
-    def __init__(self, dsp_endpoints, balance_conn_timeout):
+    def __init__(self, dsp_endpoints, event_endpoint, balance_conn_timeout):
         '''
             Constructor
             dsp_endpoints : is a list of tuples(endpoint, qps) where
@@ -31,6 +31,7 @@ class Exchange(object):
         # list containing tuples in the form 
         # (endpoint, expected qps, current qps)
         self.dest_eps = [ [ep[0], ep[1], 0] for ep in dsp_endpoints]
+        self.event_endpoint = event_endpoint
         self.conns = {}
         self.awaiting_conns = {}
         self.balance_conn_to = balance_conn_timeout
@@ -73,6 +74,7 @@ class Exchange(object):
         logging.debug("{0}: started".format(self))
         self.loop.start()
         
+
     def balance(self, watcher, revents):
         '''
             Check your connections and balance
@@ -151,7 +153,7 @@ class Exchange(object):
 
     def receive_response(self, read_buf):
         logging.debug('ex.receive_response')
-        buf, win, req_line, headers, body = \ 
+        buf, win, req_line, headers, body = \
             self.request_fact.receive_response(read_buf)
         if (not buf) and win :
             # the buf was a full response and the 

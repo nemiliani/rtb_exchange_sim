@@ -3,15 +3,21 @@ import logging
 # Plugin imports
 from plugin.rubicon_plugin import RubiconPlugin
 
-# Max connections allowed for the process
+# Max connections for bid requests allowed for the process
 MAX_CONNS = 100
+# Amount of connections for event notification allowed for the process
+MAX_EVENT_CONNS = 10
 
-# Endpoint list cointaingn tuples (endpoint, expected_qps) where :
-#  - endpoint souhld be a string 'host:port'
+# Endpoint list containing tuples for the DSPs (endpoint, expected_qps) where :
+#  - endpoint should be a string 'host:port'
 #  - expected_qps is the amount of qps expected for the endpoint
 ENDPOINT_LIST = [
-    ('localhost:9876', 1),
+    ('localhost:80', 1),
 ]
+
+# Event endpoint :
+# - endpoint should be a string 'host:port'
+EVENT_ENDPOINT = 'localhost:9876'
 
 # Balance time out indicating the period in seconds 
 # to balance connections

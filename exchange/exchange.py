@@ -11,7 +11,7 @@ import Queue
 
 from utils import Worker, WorkerPool, Connection, NONBLOCKING
 from settings import MAX_CONNS, MAX_EVENT_CONNS, CHECK_CONNS_TO, \
-                    TEMPLATE_FILENAME, PARAMETER_PLUGIN
+                    TEMPLATE_FILENAME, EVENT_ENDPOINT, PARAMETER_PLUGIN
 from rtb import RTBRequestFactory
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
@@ -34,8 +34,7 @@ class Exchange(object):
         self.event_endpoint = event_endpoint
         self.conns = {}
         self.awaiting_conns = {}
-        self.event_conns = {}
-        self.awaiting_event_conns = {}
+        self.event_conn_queue = []
         self.balance_conn_to = balance_conn_timeout
         self.loop = pyev.default_loop()
         self.watchers = [pyev.Signal(sig, self.loop, self.signal_cb)
@@ -57,6 +56,7 @@ class Exchange(object):
                                     TEMPLATE_FILENAME)
         self.request_fact.initialize()
         self.request_fact.set_parameter_plug(PARAMETER_PLUGIN)
+        self.pending_wins = []
 
     def signal_cb(self, watcher, revents):
         self.stop()
@@ -107,7 +107,7 @@ class Exchange(object):
                 else :
                     logging.warning('MAX_CONNS %d reached' % MAX_CONNS)
 
-    def async_connect(self, endpoint, event_endpoint=False):
+    def async_connect(self, endpoint):
         '''
             Asynchronously connect to an endpoint
         '''
@@ -115,16 +115,13 @@ class Exchange(object):
         logging.debug('launching async_connect to %s' % endpoint)
         ep = endpoint.split(':')
         ep = (ep[0], int(ep[1]))
-        connect_cb = None
-        if event_endpoint :
-            connect_cb = self.event_connection_done
         conn = Connection(
                 ep, 
                 self.loop, 
                 self.create_request, 
                 self.receive_response, 
                 self.remove_connection,
-                connect_cb)
+                None)
         self.awaiting_conns[conn.id] = conn
         self.current_connections += 1
         # create the entry
@@ -133,9 +130,6 @@ class Exchange(object):
         state = conn.connect()
         if state == Connection.STATE_CONNECTING:
            logging.debug('connecting!')
-
-    def event_connection_done(self, watcher, revents):
-        pass
 
     def check_established_connections(self, watcher, revents):
         logging.debug('checking connections')
@@ -168,7 +162,7 @@ class Exchange(object):
         except ValueError:
             logging.info('connection %d was not yet persisted' % conn.id)
 
-    def receive_response(self, read_buf):
+    def receive_response(self, read_buf, conn):
         logging.debug('ex.receive_response')
         buf, win, req_line, headers, body = \
             self.request_fact.receive_response(read_buf)
@@ -178,7 +172,7 @@ class Exchange(object):
             # to create a win request notification
             buf = self.request_fact.create_win_request(
                                             req_line, headers, body)
-            # send it            
+            # send it
             self.send_win_notification(buf)
             return ''
         elif buf and win is None:
@@ -189,14 +183,65 @@ class Exchange(object):
             # but we did not win
             return ''
 
-    def create_request(self):
+    def create_request(self, conn):
         logging.debug('ex.create_request')
         return self.request_fact.create_request()    
 
-    def receive_win_response(self, read_buf):
-        logging.debug('ex.receive_win_response')
-        return self.request_fact.receive_win_response(read_buf)
-
     def send_win_notification(self, buf):
-        pass
+        logging.debug('ex.send_win_response')
+        # do we have any connections available
+        conn = self.get_event_connection()
+        if not conn:
+            logging.debug('ex.buffering win')
+            self.pending_wins.append(buf)
+            return
+        # request an event to send the buffer
+        conn.send_buffer(buf)
 
+    def get_event_connection(self):
+        logging.debug('ex.get_event_connection')
+        # any connections left ?
+        if len(self.event_conn_queue):
+            return self.event_conn_queue.pop(0)
+        # No available connections, can we create 
+        # another one?
+        if not len(self.event_conn_queue) < MAX_EVENT_CONNS:
+            return None
+        # create another one
+        ep = EVENT_ENDPOINT.split(':')
+        ep = (ep[0], int(ep[1]))
+        conn = Connection(
+                ep, 
+                self.loop, 
+                self.create_win_request, 
+                self.receive_win_response, 
+                self.remove_event_connection,
+                None)
+        state = conn.connect()
+        if state == Connection.STATE_CONNECTING:
+           logging.debug('connecting!')
+        return conn
+    
+    def create_win_request(self, conn):
+        # we can pass since we set the buffer at
+        # send_win_notification
+        logging.error('This method should not ever be invoked')
+        return ''
+
+    def receive_win_response(self, read_buf, conn):
+        logging.debug('ex.receive_win_response')
+        self.event_conn_queue.append(conn)
+        # set the connection into IDLE mode so that after
+        # receiving the in response we don't register a
+        # WRITE event
+        conn.state = Connection.STATE_IDLE
+        return self.request_fact.receive_win_response(read_buf)    
+
+    def remove_event_connection(self, conn):
+        logging.debug('ex.remove_event_connection %d', conn.id)
+        try :
+            self.event_conn_queue.remove(conn)
+        except :
+            logging.info(
+                'unable to remove event conn %d, it was not queued',
+                 conn.id)

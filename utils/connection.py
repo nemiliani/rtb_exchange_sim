@@ -18,6 +18,7 @@ class Connection(object):
     STATE_CONNECTING = 'CONNECTING'
     STATE_CONNECTED = 'NOT_CONNECTED'
     STATE_ERROR = 'ERROR'
+    STATE_IDLE = 'IDLE'
     
     _id = 1
 
@@ -65,6 +66,13 @@ class Connection(object):
             self.timer.start()
         return self.state
 
+    def send_buffer(self, buf):
+        logging.debug('conn.send_buffer')
+        # set the buffer and wait the write event
+        self.state = Connection.STATE_CONNECTED
+        self.buf = buf
+        self.reset(pyev.EV_WRITE)
+        
     def set_qps(self, watcher, revents):
         self.last_qps = self.current_qps
         self.current_qps = 0        
@@ -91,13 +99,14 @@ class Connection(object):
             if err.args[0] not in NONBLOCKING:
                 self.handle_error("error reading from {0}".format(self.sock))
         if self.read_buf:
-            buf = self.response_cb(self.read_buf)
+            buf = self.response_cb(self.read_buf, self)
             # was it a full response ?           
             if not buf :
                 # we got a full response                
                 self.current_qps += 1
                 self.read_buf = ''
-                self.reset(pyev.EV_WRITE)
+                if not self.state == Connection.STATE_IDLE:
+                    self.reset(pyev.EV_WRITE)
             else : 
                 # we got a partial response keep on reading
                 logging.debug('partial buffer received %s' % self.read_buf)
@@ -109,8 +118,9 @@ class Connection(object):
     def handle_write(self):
         try:
             logging.debug('handling write')
+            self.state = Connection.STATE_CONNECTED
             if not self.buf :
-                self.buf += self.request_cb()            
+                self.buf += self.request_cb(self)            
             logging.debug('sending %s' % self.buf)
             sent = self.sock.send(self.buf)
         except socket.error as err:

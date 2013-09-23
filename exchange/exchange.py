@@ -11,7 +11,8 @@ import Queue
 
 from utils import Worker, WorkerPool, Connection, NONBLOCKING
 from settings import MAX_CONNS, MAX_EVENT_CONNS, CHECK_CONNS_TO, CHECK_PENDING_TO, \
-                    TEMPLATE_FILENAME, EVENT_ENDPOINT, PARAMETER_PLUGIN
+                    TEMPLATE_FILENAME, EVENT_ENDPOINT, PARAMETER_PLUGIN, \
+                    KEEP_ALIVE_HTTP_REQUEST, EVENT_CONN_KEEP_ALIVE_TO
 from rtb import RTBRequestFactory
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
@@ -35,7 +36,8 @@ class Exchange(object):
         self.conns = {}
         self.awaiting_conns = {}
         self.event_conn_queue = []
-        self.event_connections = 0        
+        self.event_connections = 0
+        self.keep_alive_resp_waiting = {}        
         self.balance_conn_to = balance_conn_timeout
         self.loop = pyev.default_loop()
         self.watchers = [pyev.Signal(sig, self.loop, self.signal_cb)
@@ -58,6 +60,12 @@ class Exchange(object):
                                 CHECK_PENDING_TO, 
                                 self.loop,
                                 self.check_pending_wins))
+
+        self.watchers.append(pyev.Timer(
+                                EVENT_CONN_KEEP_ALIVE_TO, 
+                                EVENT_CONN_KEEP_ALIVE_TO, 
+                                self.loop,
+                                self.send_keep_alives))
 
         self.current_connections = 0
         self.request_fact = RTBRequestFactory(
@@ -244,7 +252,10 @@ class Exchange(object):
         # receiving the in response we don't register a
         # WRITE event
         conn.state = Connection.STATE_IDLE
-        return self.request_fact.receive_win_response(read_buf)    
+        if conn.id in self.keep_alive_resp_waiting:
+            del self.keep_alive_resp_waiting[conn.id]
+            return ''
+        return self.request_fact.receive_win_response(read_buf) 
 
     def remove_event_connection(self, conn):
         logging.debug('ex.remove_event_connection %d', conn.id)
@@ -270,3 +281,12 @@ class Exchange(object):
                     break
             except IndexError:
                 break
+
+    def send_keep_alives(self,  watcher, revents):
+        logging.debug('ex.send_keep_alives')
+        buf = KEEP_ALIVE_HTTP_REQUEST % EVENT_CONN_KEEP_ALIVE_TO
+        for i in range(len(self.event_conn_queue)):
+            conn = self.event_conn_queue.pop(0)
+            conn.send_buffer(buf)
+            self.keep_alive_resp_waiting[conn.id] = conn
+        

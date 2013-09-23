@@ -30,6 +30,15 @@ CHECK_CONNS_TO = 1
 # Check pending wins and try to send them
 CHECK_PENDING_TO = 1
 
+# Keep alive time out for the event conns
+EVENT_CONN_KEEP_ALIVE_TO = 2
+
+# Keep alive request
+KEEP_ALIVE_HTTP_REQUEST = \
+    'GET / HTTP/1.1\r\n' \
+    'Keep-Alive: timeout=%d, max=5000\r\n' \
+    'Connection: Keep-Alive\r\n' 
+
 # Log level should be one of :
 # - logging.DEBUG
 # - logging.INFO

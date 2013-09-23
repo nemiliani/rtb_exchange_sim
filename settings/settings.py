@@ -27,6 +27,9 @@ BALANCE_TO = 3
 # seconds to verify if a connection attempt was successfull
 CHECK_CONNS_TO = 1
 
+# Check pending wins and try to send them
+CHECK_PENDING_TO = 1
+
 # Log level should be one of :
 # - logging.DEBUG
 # - logging.INFO

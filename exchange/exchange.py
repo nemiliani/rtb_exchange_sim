@@ -10,7 +10,7 @@ import threading
 import Queue
 
 from utils import Worker, WorkerPool, Connection, NONBLOCKING
-from settings import MAX_CONNS, MAX_EVENT_CONNS, CHECK_CONNS_TO, \
+from settings import MAX_CONNS, MAX_EVENT_CONNS, CHECK_CONNS_TO, CHECK_PENDING_TO, \
                     TEMPLATE_FILENAME, EVENT_ENDPOINT, PARAMETER_PLUGIN
 from rtb import RTBRequestFactory
 
@@ -35,6 +35,7 @@ class Exchange(object):
         self.conns = {}
         self.awaiting_conns = {}
         self.event_conn_queue = []
+        self.event_connections = 0        
         self.balance_conn_to = balance_conn_timeout
         self.loop = pyev.default_loop()
         self.watchers = [pyev.Signal(sig, self.loop, self.signal_cb)
@@ -51,6 +52,13 @@ class Exchange(object):
                                 CHECK_CONNS_TO, 
                                 self.loop,
                                 self.check_established_connections))
+
+        self.watchers.append(pyev.Timer(
+                                CHECK_PENDING_TO, 
+                                CHECK_PENDING_TO, 
+                                self.loop,
+                                self.check_pending_wins))
+
         self.current_connections = 0
         self.request_fact = RTBRequestFactory(
                                     TEMPLATE_FILENAME)
@@ -205,11 +213,12 @@ class Exchange(object):
             return self.event_conn_queue.pop(0)
         # No available connections, can we create 
         # another one?
-        if not len(self.event_conn_queue) < MAX_EVENT_CONNS:
+        if not self.event_connections < MAX_EVENT_CONNS:
             return None
         # create another one
         ep = EVENT_ENDPOINT.split(':')
         ep = (ep[0], int(ep[1]))
+        self.event_connections += 1
         conn = Connection(
                 ep, 
                 self.loop, 
@@ -240,8 +249,24 @@ class Exchange(object):
     def remove_event_connection(self, conn):
         logging.debug('ex.remove_event_connection %d', conn.id)
         try :
+            self.event_connections -= 1
             self.event_conn_queue.remove(conn)
         except :
             logging.info(
                 'unable to remove event conn %d, it was not queued',
                  conn.id)
+
+    def check_pending_wins(self,  watcher, revents):
+        logging.debug('ex.check_pending_wins')
+        # get the amount of idle connections        
+        wins = len(self.pending_wins)
+        for i in range(wins):
+            try :
+                conn = self.get_event_connection()
+                if conn :
+                    logging.debug('ex. sending pending win')
+                    conn.send_buffer(self.pending_wins.pop(0))
+                else :
+                    break
+            except IndexError:
+                break

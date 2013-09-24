@@ -36,6 +36,7 @@ class Exchange(object):
         self.conns = {}
         self.awaiting_conns = {}
         self.event_conn_queue = []
+        self.event_conns = {}
         self.event_connections = 0
         self.keep_alive_resp_waiting = {}        
         self.balance_conn_to = balance_conn_timeout
@@ -237,6 +238,7 @@ class Exchange(object):
         state = conn.connect()
         if state == Connection.STATE_CONNECTING:
            logging.debug('connecting!')
+        self.event_conns[conn.id] = conn       
         return conn
     
     def create_win_request(self, conn):
@@ -262,6 +264,7 @@ class Exchange(object):
         try :
             self.event_connections -= 1
             self.event_conn_queue.remove(conn)
+            del self.event_conns[conn.id]
         except :
             logging.info(
                 'unable to remove event conn %d, it was not queued',

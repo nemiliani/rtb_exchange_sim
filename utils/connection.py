@@ -41,6 +41,9 @@ class Connection(object):
         Connection._id += 1
         logging.debug("{0}: ready".format(self))
 
+    def __del__(self):
+        logging.info('------------------> __del__ conn %d' % self.id)
+
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setblocking(0)

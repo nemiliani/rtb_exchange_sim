@@ -96,12 +96,14 @@ class Connection(object):
         
     def handle_read(self):
         try:
-            logging.debug('handling read')
+            logging.debug('handling read %d' % self.id)
             self.read_buf += self.sock.recv(1024)
             logging.debug('reading %s' % self.read_buf)
         except socket.error as err:
             if err.args[0] not in NONBLOCKING:
                 self.handle_error("error reading from {0}".format(self.sock))
+            else :
+                logging.error('NONBLOCKING event on read')
         if self.read_buf:
             buf = self.response_cb(self.read_buf, self)
             # was it a full response ?           
@@ -121,7 +123,7 @@ class Connection(object):
 
     def handle_write(self):
         try:
-            logging.debug('handling write')
+            logging.debug('handling write %d' % self.id)
             self.state = Connection.STATE_CONNECTED
             if not self.buf :
                 self.buf += self.request_cb(self)            
@@ -131,6 +133,8 @@ class Connection(object):
             logging.error('handle_write ex')            
             if err.args[0] not in NONBLOCKING:
                 self.handle_error("error writing to {0}".format(self.sock))
+            else :
+                logging.error('NONBLOCKING event on write')
         else :
             if self.state == Connection.STATE_CONNECTING:
                 self.state = Connection.STATE_CONNECTED

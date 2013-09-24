@@ -154,7 +154,8 @@ class Exchange(object):
         for cid, conn in self.awaiting_conns.items():
             ep_key = ':'.join([str(i) for i in conn.address])
             if conn.state == Connection.STATE_CONNECTED:
-                logging.info('connected to %s ' % ep_key)                
+                logging.info('connected to %s ' % ep_key)
+                logging.debug('bid connecting with id %d' % conn.id)        
                 # save the connection                    
                 self.conns[ep_key].append(conn)
                 # remove from awaiting_conns
@@ -237,7 +238,7 @@ class Exchange(object):
                 None)
         state = conn.connect()
         if state == Connection.STATE_CONNECTING:
-           logging.debug('connecting!')
+           logging.debug('event connecting with id %d' % conn.id)
         self.event_conns[conn.id] = conn       
         return conn
     
@@ -271,7 +272,7 @@ class Exchange(object):
                  conn.id)
 
     def check_pending_wins(self,  watcher, revents):
-        logging.debug('ex.check_pending_wins')
+        logging.debug('ex.check_pending_wins %d' % len(self.pending_wins))
         # get the amount of idle connections        
         wins = len(self.pending_wins)
         for i in range(wins):

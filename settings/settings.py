@@ -5,20 +5,20 @@ from plugin.rubicon_plugin import RubiconPlugin
 from plugin.datacratic_plugin import DatacraticPlugin
 
 # Max connections for bid requests allowed for the process
-MAX_CONNS = 100
+MAX_CONNS = 4
 # Amount of connections for event notification allowed for the process
-MAX_EVENT_CONNS = 10
+MAX_EVENT_CONNS = 2
 
 # Endpoint list containing tuples for the DSPs (endpoint, expected_qps) where :
 #  - endpoint should be a string 'host:port'
 #  - expected_qps is the amount of qps expected for the endpoint
 ENDPOINT_LIST = [
-    ('localhost:80', 1),
+    ('localhost:12339', 3000),
 ]
 
 # Event endpoint :
 # - endpoint should be a string 'host:port'
-EVENT_ENDPOINT = 'localhost:9876'
+EVENT_ENDPOINT = 'localhost:12340'
 
 # Balance time out indicating the period in seconds 
 # to balance connections
@@ -50,10 +50,10 @@ KEEP_ALIVE_HTTP_REQUEST = \
 # - logging.INFO
 # - logging.WARNING
 # - logging.ERROR
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 
 # Parameter plugin
-PARAMETER_PLUGIN = DatacraticPlugin
+PARAMETER_PLUGIN = RubiconPlugin
 
 # RTB request template filename
 TEMPLATE_FILENAME = 'templates/request.template'

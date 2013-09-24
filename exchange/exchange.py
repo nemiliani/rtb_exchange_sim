@@ -133,6 +133,12 @@ class Exchange(object):
                     self.async_connect(endpoint)
                 else :
                     logging.warning('MAX_CONNS %d reached' % MAX_CONNS)
+        # log wins per second
+        wps = 0
+        for k,v in self.event_conns.iteritems():
+            wps += v.current_qps
+        logging.info('wps=%d endpoint=%s conns=%d' % 
+                            (wps, EVENT_ENDPOINT, len(self.event_conns)))
 
     def async_connect(self, endpoint):
         '''

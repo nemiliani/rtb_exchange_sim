@@ -16,3 +16,6 @@ class ParameterPlugin(object):
 
     def receive_win_response(self, status_code, headers, body):
         raise NotImplementedError('receive_win_response must be implemeted')
+
+    def do(self, watcher, revents):
+        raise NotImplementedError('do must be implemeted')

@@ -31,6 +31,10 @@ CHECK_CONNS_TO = 1
 # Check pending wins and try to send them
 CHECK_PENDING_TO = 1
 
+# Timeout in seconds to periodically invoke the plugin.do method
+# set to None if it does not need to be invoked
+PLUGIN_DO_TO = 2
+
 # Keep alive time out for the event conns in seconds, if no
 # keep alive need to be sent set it to None 
 EVENT_CONN_KEEP_ALIVE_TO = None
@@ -49,7 +53,7 @@ KEEP_ALIVE_HTTP_REQUEST = \
 LOG_LEVEL = logging.DEBUG
 
 # Parameter plugin
-PARAMETER_PLUGIN = RubiconPlugin
+PARAMETER_PLUGIN = DatacraticPlugin
 
 # RTB request template filename
 TEMPLATE_FILENAME = 'templates/request.template'

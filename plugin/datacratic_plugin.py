@@ -56,3 +56,8 @@ class DatacraticPlugin(ParameterPlugin):
 
     def receive_win_response(self, status_code, headers, body):
         logging.debug('plugin.receive_win_response')
+
+    def do(self, watcher, revents):
+        logging.debug('plugin.do')
+
+

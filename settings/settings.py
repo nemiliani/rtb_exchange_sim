@@ -2,6 +2,7 @@ import logging
 
 # Plugin imports
 from plugin.rubicon_plugin import RubiconPlugin
+from plugin.datacratic_plugin import DatacraticPlugin
 
 # Max connections for bid requests allowed for the process
 MAX_CONNS = 100

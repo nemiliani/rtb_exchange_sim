@@ -31,8 +31,9 @@ CHECK_CONNS_TO = 1
 # Check pending wins and try to send them
 CHECK_PENDING_TO = 1
 
-# Keep alive time out for the event conns
-EVENT_CONN_KEEP_ALIVE_TO = 2
+# Keep alive time out for the event conns in seconds, if no
+# keep alive need to be sent set it to None 
+EVENT_CONN_KEEP_ALIVE_TO = None
 
 # Keep alive request
 KEEP_ALIVE_HTTP_REQUEST = \

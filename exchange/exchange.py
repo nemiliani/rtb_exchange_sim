@@ -61,12 +61,13 @@ class Exchange(object):
                                 CHECK_PENDING_TO, 
                                 self.loop,
                                 self.check_pending_wins))
-
-        self.watchers.append(pyev.Timer(
-                                EVENT_CONN_KEEP_ALIVE_TO, 
-                                EVENT_CONN_KEEP_ALIVE_TO, 
-                                self.loop,
-                                self.send_keep_alives))
+        
+        if EVENT_CONN_KEEP_ALIVE_TO :
+            self.watchers.append(pyev.Timer(
+                                    EVENT_CONN_KEEP_ALIVE_TO, 
+                                    EVENT_CONN_KEEP_ALIVE_TO, 
+                                    self.loop,
+                                    self.send_keep_alives))
 
         self.current_connections = 0
         self.request_fact = RTBRequestFactory(

@@ -62,13 +62,13 @@ class RubiconPlugin(ParameterPlugin):
 
     def receive_response(self, status_code, headers, body):
         logging.debug('plugin.rubicon : receive_response %s' % self.aid)
+        # is it a bid ?
+        if status_code == 204 :
+            return (False, '', {}, '')
         # throw the dice to see if it's a winner                
         win = random.randint(0, 9) < WIN_PROBABILITY
-        req_line = ''
-        headers = {}
-        body = ''
         if not win :
-            return (False, req_line, headers, body)
+            return (False, '', {}, '')
         # we won, we need to return True with all
         # all the data used to construct the win
         # notification

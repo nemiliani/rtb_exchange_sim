@@ -156,7 +156,6 @@ class Exchange(object):
                 self.remove_connection,
                 None)
         self.awaiting_conns[conn.id] = conn
-        self.current_connections += 1
         # create the entry
         if endpoint not in self.conns :
             self.conns[endpoint] = []
@@ -176,6 +175,7 @@ class Exchange(object):
                 self.conns[ep_key].append(conn)
                 # remove from awaiting_conns
                 del self.awaiting_conns[cid]
+                self.current_connections += 1
             elif conn.state == Connection.STATE_CONNECTING:
                 logging.info('still trying to connect to %s ' % ep_key)
             else :
@@ -183,7 +183,6 @@ class Exchange(object):
                 # remove from awaiting_conns
                 self.awaiting_conns[cid].close()
                 del self.awaiting_conns[cid]
-                self.current_connections -= 1
                 logging.error('unable to connect to end')
 
 

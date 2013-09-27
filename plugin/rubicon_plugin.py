@@ -61,7 +61,7 @@ class RubiconPlugin(ParameterPlugin):
         return (req_line, headers, body)
 
     def receive_response(self, status_code, headers, body):
-        logging.debug('plugin.rubicon : receive_response %s' % self.aid)
+        logging.debug('plugin.rubicon : receive_response ')
         # is it a bid ?
         if status_code == 204 :
             return (False, '', {}, '')
@@ -72,13 +72,15 @@ class RubiconPlugin(ParameterPlugin):
         # we won, we need to return True with all
         # all the data used to construct the win
         # notification
+        aid = json.loads(body)["seatbid"][0]["bid"][0]["id"][:-2]
+        logging.debug('plugin.rubicon : sending win for %s' % aid)
         req_line = 'POST /win HTTP/1.1'
         headers = {}
         headers['Connection'] = 'keep-alive'
         headers['Content-Type'] = 'application/json'
         delta = (datetime.datetime.now() - \
                     datetime.datetime(1970,1,1)).total_seconds()
-        body = WIN_REQ % (self.aid, str(delta))
+        body = WIN_REQ % (aid, str(delta))
         headers['Content-Length'] = str(len(body))
         return (True, req_line, headers, body)
 

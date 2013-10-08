@@ -5,19 +5,19 @@ import json
 import os
 import datetime
 
-WIN_PROBABILITY = 3
+WIN_PROBABILITY = 9
 
 BASE_PATH = 'plugin/rubicon'
 
 REQUEST_FILES = [ 
     'rubicon_banner1_nw.json',
-    'rubicon_banner2_nw.json',
-    'rubicon_banner3_nw.json',
-    'rubicon_banner4_nw.json',
-    'rubicon_desktop_nw.json',
-    'rubicon_mobile_app_nw.json',
-    'rubicon_mobile_web_nw.json',
-    'rubicon_test1_nw.json'
+#    'rubicon_banner2_nw.json',
+#    'rubicon_banner3_nw.json',
+#    'rubicon_banner4_nw.json',
+#    'rubicon_desktop_nw.json',
+#    'rubicon_mobile_app_nw.json',
+#    'rubicon_mobile_web_nw.json',
+#    'rubicon_test1_nw.json'
 ]
 
 WIN_REQ = '{"account":["padre","hijo","nieto"],"adSpotId":"1","auctionId":"%s","bidTimestamp":0.0,"channels":[],"timestamp":%s,"type":1,"uids":{"prov":"597599535","xchg":"1177748678"},"winPrice":[96,"USD/1M"]}'
@@ -61,20 +61,20 @@ class RubiconPlugin(ParameterPlugin):
         return (req_line, headers, body)
 
     def receive_response(self, status_code, headers, body):
-        logging.debug('plugin.rubicon : receive_response ')
+        logging.debug('plugin.rubicon : receive_response')
         # is it a bid ?
         if status_code == 204 :
             return (False, '', {}, '')
         # throw the dice to see if it's a winner                
         win = random.randint(0, 9) < WIN_PROBABILITY
-        if not win :
+        if not win:
             return (False, '', {}, '')
+        aid = json.loads(body)["seatbid"][0]["bid"][0]["id"][:-2]
         # we won, we need to return True with all
         # all the data used to construct the win
         # notification
-        aid = json.loads(body)["seatbid"][0]["bid"][0]["id"][:-2]
         logging.debug('plugin.rubicon : sending win for %s' % aid)
-        req_line = 'POST /win HTTP/1.1'
+        req_line = 'POST /win?ev=imp&pr=546CF33989B0EF0F&pcid=abc&aid=%s HTTP/1.1' % aid
         headers = {}
         headers['Connection'] = 'keep-alive'
         headers['Content-Type'] = 'application/json'

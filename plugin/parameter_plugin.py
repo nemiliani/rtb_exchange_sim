@@ -5,7 +5,7 @@ class ParameterPlugin(object):
     def __init__(self):
         pass
     
-    def initialize(self):
+    def initialize(self, adserver):
         raise NotImplementedError('initialize must be implemeted')
 
     def get_request(self):

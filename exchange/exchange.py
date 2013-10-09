@@ -76,8 +76,9 @@ class Exchange(object):
         self.current_connections = 0
         self.request_fact = RTBRequestFactory(
                                     TEMPLATE_FILENAME)
+        self.adserver = AdServer(self.loop)
         self.request_fact.initialize()
-        self.request_fact.set_parameter_plug(PARAMETER_PLUGIN)
+        self.request_fact.set_parameter_plug(PARAMETER_PLUGIN, self.adserver)
         if PLUGIN_DO_TO:
             self.watchers.append(pyev.Timer(
                                     PLUGIN_DO_TO, 
@@ -85,7 +86,7 @@ class Exchange(object):
                                     self.loop,
                                     self.request_fact.plugin_instance.do))
         self.pending_wins = []
-        self.adserver = AdServer(self.loop)
+        
 
     def signal_cb(self, watcher, revents):
         self.stop()

@@ -30,7 +30,8 @@ class RubiconPlugin(ParameterPlugin):
         self.request_templates = []
         self.aid = None 
 
-    def initialize(self):
+    def initialize(self, adserver):
+        self.adserver = adserver
         for name in REQUEST_FILES:
             with open(os.path.join(BASE_PATH, name), 'rb') as f:
                 tmp = f.readline()

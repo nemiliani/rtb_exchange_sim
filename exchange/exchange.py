@@ -14,9 +14,10 @@ from utils import Worker, WorkerPool, Connection, NONBLOCKING
 from settings import MAX_CONNS, MAX_EVENT_CONNS, CHECK_CONNS_TO, CHECK_PENDING_TO, \
                     TEMPLATE_FILENAME, EVENT_ENDPOINT, PARAMETER_PLUGIN, \
                     KEEP_ALIVE_HTTP_REQUEST, EVENT_CONN_KEEP_ALIVE_TO, \
-                    PLUGIN_DO_TO
+                    PLUGIN_DO_TO, REPORT_WINS
 
 from rtb import RTBRequestFactory
+from adserver import AdServer
 
 STOPSIGNALS = (signal.SIGINT, signal.SIGTERM)
 
@@ -84,15 +85,18 @@ class Exchange(object):
                                     self.loop,
                                     self.request_fact.plugin_instance.do))
         self.pending_wins = []
+        self.adserver = AdServer(self.loop)
 
     def signal_cb(self, watcher, revents):
         self.stop()
+        self.adserver.stop()
 
     def stop(self):
         self.loop.stop(pyev.EVBREAK_ALL)
         while self.watchers:
             self.watchers.pop().stop()
         logging.debug("{0}: stopped".format(self))
+        self.adserver.stop()
 
     def start(self):
         '''
@@ -134,11 +138,12 @@ class Exchange(object):
                 else :
                     logging.warning('MAX_CONNS %d reached' % MAX_CONNS)
         # log wins per second
-        wps = 0
-        for k,v in self.event_conns.iteritems():
-            wps += v.current_qps
-        logging.info('wps=%d endpoint=%s conns=%d' % 
-                            (wps, EVENT_ENDPOINT, len(self.event_conns)))
+        if REPORT_WINS :
+            wps = 0
+            for k,v in self.event_conns.iteritems():
+                wps += v.current_qps
+            logging.info('wps=%d endpoint=%s conns=%d' % 
+                                (wps, EVENT_ENDPOINT, len(self.event_conns)))
 
     def async_connect(self, endpoint):
         '''
@@ -218,7 +223,7 @@ class Exchange(object):
 
     def create_request(self, conn):
         logging.debug('ex.create_request')
-        return self.request_fact.create_request()    
+        return self.request_fact.create_request()
 
     def send_win_notification(self, buf):
         logging.debug('ex.send_win_response')

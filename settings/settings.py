@@ -5,15 +5,15 @@ from plugin.rubicon_plugin import RubiconPlugin
 from plugin.datacratic_plugin import DatacraticPlugin
 
 # Max connections for bid requests allowed for the process
-MAX_CONNS = 4
+MAX_CONNS = 1
 # Amount of connections for event notification allowed for the process
-MAX_EVENT_CONNS = 2
+MAX_EVENT_CONNS = 1
 
 # Endpoint list containing tuples for the DSPs (endpoint, expected_qps) where :
 #  - endpoint should be a string 'host:port'
 #  - expected_qps is the amount of qps expected for the endpoint
 ENDPOINT_LIST = [
-    ('localhost:12339', 3000),
+    ('localhost:12339', 0),
 ]
 
 # Event endpoint :
@@ -34,6 +34,9 @@ CHECK_PENDING_TO = 1
 # Timeout in seconds to periodically invoke the plugin.do method
 # set to None if it does not need to be invoked
 PLUGIN_DO_TO = 2
+
+# Report wps statistics
+REPORT_WINS = False
 
 # Keep alive time out for the event conns in seconds, if no
 # keep alive need to be sent set it to None 

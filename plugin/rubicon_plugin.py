@@ -5,7 +5,7 @@ import json
 import os
 import datetime
 
-WIN_PROBABILITY = 9
+WIN_PROBABILITY = 2
 
 BASE_PATH = 'plugin/rubicon'
 
@@ -75,18 +75,33 @@ class RubiconPlugin(ParameterPlugin):
         # all the data used to construct the win
         # notification
         logging.debug('plugin.rubicon : sending win for %s' % aid)
-        req_line = 'POST /win?ev=imp&pr=546CF33989B0EF0F&pcid=abc&aid=%s HTTP/1.1' % aid
+        req_line = 'POST /win?ev=imp&auctionPrice=546CF33989B0EF0F' \
+                    '&publisherCreativeId=abc&auctionId=%s HTTP/1.1' % aid
         headers = {}
-        headers['Connection'] = 'keep-alive'
         headers['Content-Type'] = 'application/json'
         delta = (datetime.datetime.now() - \
                     datetime.datetime(1970,1,1)).total_seconds()
         body = WIN_REQ % (aid, str(delta))
         headers['Content-Length'] = str(len(body))
-        return (True, req_line, headers, body)
+        heads = self.headers_to_str(headers)
+        buf = '%s\r\n%s\r\n%s' % (req_line, heads, body)
+        # send the impression event in 0.5 secs
+        self.adserver.send_event(buf, 0.5)
+
+        click_req_line = 'POST /click?ev=click' \
+                    '&publisherCreativeId=abc&auctionId=%s HTTP/1.1' % aid
+        buf_click = '%s\r\n%s\r\n%s' % (click_req_line, heads, body)
+        self.adserver.send_event(buf_click, 1.8)
+        return (False, '', {}, '')
 
     def receive_win_response(self, status_code, headers, body):
         logging.debug('plugin.rubicon : received_win_response')
 
     def do(self, watcher, revents):
         logging.debug('plugin.rubicon : doing')
+
+    def headers_to_str(self, headers):
+        heads = ''
+        for k,v in headers.iteritems():
+            heads += '%s: %s\r\n' % (k, v)
+        return heads

@@ -48,7 +48,7 @@ class Connection(object):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setblocking(0)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        logging.debug('connecting to %s:%d' %
+        logging.info('connecting to %s:%d' %
                             (self.address[0], self.address[1]))
         res = self.sock.connect_ex(self.address)
         if res != errno.EINPROGRESS :

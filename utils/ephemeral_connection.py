@@ -25,7 +25,7 @@ class EphemeralConnection(object):
         self.loop = loop
         self.address = address
         self.buf = buf
-        self.read_buf = None
+        self.read_buf = ''
         self.response_cb = response_cb
         self.error_cb = error_cb
         self.no_response_cb = no_response_cb
@@ -33,8 +33,11 @@ class EphemeralConnection(object):
         self.sock = None
         self.timer = None
         self.watcher = None
-        self.id = Connection._id
-        Connection._id += 1
+        self.id = EphemeralConnection._id
+        EphemeralConnection._id += 1
+
+    def __del__(self):
+        logging.info('------------------> __del__ conn %d' % self.id)
 
     def connect(self):
         '''
@@ -47,7 +50,7 @@ class EphemeralConnection(object):
                             (self.address[0], self.address[1]))
         res = self.sock.connect_ex(self.address)
         if res != errno.EINPROGRESS :
-            logging.error('EphemeralConnection : unable to connect to %s:%d' %
+            logging.debug('EphemeralConnection : unable to connect to %s:%d' %
                             (self.address[0], self.address[1]))
             self.state = EphemeralConnection.STATE_ERROR
         else:
@@ -61,7 +64,7 @@ class EphemeralConnection(object):
                     self.connect_cb)
             self.watcher.start()
             # start the application layer time out
-            self.timer = pyev.Timer(2, 0.0, self.loop, self.no_response)
+            self.timer = pyev.Timer(2, 0.0, self.loop, self.no_response_cb)
             self.timer.start()
         return self.state
 
@@ -75,7 +78,7 @@ class EphemeralConnection(object):
                              exc_info=exc_info)
         self.close()
         self.error_cb(self)
-        self.state = Connection.STATE_ERROR
+        self.state = EphemeralConnection.STATE_ERROR
 
     def handle_read(self):
         try:
@@ -102,9 +105,7 @@ class EphemeralConnection(object):
     def handle_write(self):
         try:
             logging.debug('EphemeralConnection : handling write %d' % self.id)
-            self.state = Connection.STATE_CONNECTED
-            if not self.buf :
-                self.buf += self.request_cb(self)            
+            self.state = EphemeralConnection.STATE_CONNECTED         
             logging.debug('EphemeralConnection : sending %s' % self.buf)
             sent = self.sock.send(self.buf)
         except socket.error as err:
@@ -117,8 +118,8 @@ class EphemeralConnection(object):
                 logging.error(
                     'EphemeralConnection : NONBLOCKING event on write')
         else :
-            if self.state == Connection.STATE_CONNECTING:
-                self.state = Connection.STATE_CONNECTED
+            if self.state == EphemeralConnection.STATE_CONNECTING:
+                self.state = EphemeralConnection.STATE_CONNECTED
             self.buf = self.buf[sent:]
             if not self.buf:
                 # all the request buffer was sent, 
@@ -143,4 +144,4 @@ class EphemeralConnection(object):
             self.watcher = None
             self.timer.stop()
             self.timer = None
-        logging.debug("{0}: closed".format(self))
+        logging.debug("EphemeralConnection : closed %d" % self.id)

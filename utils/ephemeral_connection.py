@@ -37,7 +37,8 @@ class EphemeralConnection(object):
         EphemeralConnection._id += 1
 
     def __del__(self):
-        logging.info('------------------> __del__ conn %d' % self.id)
+        logging.info('------------------> ad __del__ conn %d' % self.id)
+        pass
 
     def connect(self):
         '''

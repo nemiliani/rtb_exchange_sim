@@ -29,6 +29,12 @@ class AdServer(object):
         self.resps = 0
         self.no_resps = 0
         self.errors = 0
+        self.conn_pool = [
+            EphemeralConnection(
+                self.loop, self.endpoint, '', self.recv_http,
+                self.on_error, self.no_response) for i in range(900)
+        ]
+        self.conn_use = []
 
     def stop(self):
         self.stats_timer.stop()
@@ -47,9 +53,18 @@ class AdServer(object):
         # create the connection and send the buffer (send buffer)
         logging.debug('ad.send_event creating conn')
 
-        conn = EphemeralConnection(
-                self.loop, self.endpoint, buf, self.recv_http, 
-                self.on_error, self.no_response)
+        #conn = EphemeralConnection(
+        #        self.loop, self.endpoint, buf, self.recv_http, 
+        #        self.on_error, self.no_response)
+        conn = None
+        try :
+            conn = self.conn_pool.pop()
+            self.conn_use.append(conn)
+        except :
+            logging.error('no more connections')
+            return
+        conn.buf = buf
+        conn.read_buf = ''
         to = pyev.Timer(
                             timeout, 
                             0.0, 
@@ -85,6 +100,8 @@ class AdServer(object):
         self.resps += 1 
         try:
             conn.close()
+            self.conn_pool.append(conn)
+            self.conn_use.remove(conn)
         except :
             pass
         return ''
@@ -94,6 +111,8 @@ class AdServer(object):
         self.errors += 1  
         try:
             conn.close()
+            self.conn_pool.append(conn)
+            self.conn_use.remove(conn)
         except :
             pass
 
@@ -102,5 +121,7 @@ class AdServer(object):
         self.no_resps += 1        
         try:
             conn.close()
+            self.conn_pool.append(conn)
+            self.conn_use.remove(conn)
         except :
             pass

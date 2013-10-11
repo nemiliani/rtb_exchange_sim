@@ -144,4 +144,5 @@ class EphemeralConnection(object):
             self.watcher = None
             self.timer.stop()
             self.timer = None
+        self.sock = None
         logging.debug("EphemeralConnection : closed %d" % self.id)

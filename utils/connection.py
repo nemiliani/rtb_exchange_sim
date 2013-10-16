@@ -116,7 +116,6 @@ class Connection(object):
             else : 
                 # we got a partial response keep on reading
                 logging.debug('partial buffer received %s' % self.read_buf)
-                self.read_buf += buf
                 self.reset(pyev.EV_READ)
         else:
             self.handle_error("connection closed by peer", logging.DEBUG, False)

@@ -97,8 +97,10 @@ class Connection(object):
     def handle_read(self):
         try:
             logging.debug('handling read %d' % self.id)
-            self.read_buf += self.sock.recv(1024)
-            logging.debug('reading %s' % self.read_buf)
+            b = self.sock.recv(1024)
+            logging.debug('reading -------------->%s<------------------' % b)
+            self.read_buf += b
+            logging.debug('buffer -------------->%s<------------------' % self.read_buf)
         except socket.error as err:
             if err.args[0] not in NONBLOCKING:
                 self.handle_error("error reading from {0}".format(self.sock))

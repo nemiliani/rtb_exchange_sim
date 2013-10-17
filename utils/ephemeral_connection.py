@@ -51,9 +51,10 @@ class EphemeralConnection(object):
                             (self.address[0], self.address[1]))
         res = self.sock.connect_ex(self.address)
         if res != errno.EINPROGRESS :
-            logging.debug('EphemeralConnection : unable to connect to %s:%d' %
-                            (self.address[0], self.address[1]))
+            logging.error('EphemeralConnection : unable to connect to %s:%d res=%d' %
+                            (self.address[0], self.address[1], res))
             self.state = EphemeralConnection.STATE_ERROR
+            self.handle_error('unable to connect')
         else:
             if not self.connect_cb:
                 self.connect_cb = self.io_cb 

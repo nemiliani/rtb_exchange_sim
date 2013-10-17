@@ -111,7 +111,6 @@ class AdServer(object):
         logging.error('ad.on_error : error recived %d' % conn.id)
         self.errors += 1  
         try:
-            conn.close()
             self.conn_pool.append(conn)
             self.conn_use.remove(conn)
         except :

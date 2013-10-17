@@ -47,6 +47,7 @@ class AdServer(object):
             'evs=%d reps=%d errs=%d noresps=%d, endpoint=%s:%d' % 
             (self.reqs, self.resps, self.errors, self.no_resps, 
             self.endpoint[0], self.endpoint[1]))
+        logging.info('idle_conns=%d used_conns=%d' % (len(self.conn_pool),len(self.conn_use)))
 
     def send_event(self, buf, timeout):
         # set the timeout to call the method that will
@@ -103,7 +104,7 @@ class AdServer(object):
             self.conn_pool.append(conn)
             self.conn_use.remove(conn)
         except :
-            pass
+            logging.error('recv_http') 
         return ''
 
     def on_error(self, conn):

@@ -5,6 +5,7 @@ import logging
 import socket
 import signal
 import errno
+import struct
 
 NONBLOCKING = (errno.EAGAIN, errno.EWOULDBLOCK)
 
@@ -66,9 +67,13 @@ class EphemeralConnection(object):
                     self.connect_cb)
             self.watcher.start()
             # start the application layer time out
-            self.timer = pyev.Timer(2, 0.0, self.loop, self.no_response_cb)
-            self.timer.start()
+            self.conn_timer = pyev.Timer(2, 0.0, self.loop, self.too_long_conn, self)
+            self.conn_timer.start()
         return self.state
+
+    def too_long_conn(self, watcher, revents):
+        logging.error("connection took more than 2 seconds")
+        self.conn_timer.stop()
 
     def reset(self, events):
         self.watcher.stop()
@@ -110,6 +115,9 @@ class EphemeralConnection(object):
             self.state = EphemeralConnection.STATE_CONNECTED         
             logging.debug('EphemeralConnection : sending %s' % self.buf)
             sent = self.sock.send(self.buf)
+            self.timer = pyev.Timer(2, 0.0, self.loop, self.no_response_cb, self)
+            self.timer.start()
+            self.conn_timer.stop();
         except socket.error as err:
             logging.error('EphemeralConnection : handle_write ex')            
             if err.args[0] not in NONBLOCKING:
@@ -146,5 +154,7 @@ class EphemeralConnection(object):
             self.watcher = None
             self.timer.stop()
             self.timer = None
+            self.conn_timer.stop()
+            self.conn_timer = None
         self.sock = None
         logging.debug("EphemeralConnection : closed %d" % self.id)

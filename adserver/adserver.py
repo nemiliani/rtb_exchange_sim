@@ -116,7 +116,8 @@ class AdServer(object):
         except :
             pass
 
-    def no_response(self, conn):
+    def no_response(self, watcher, revents):
+        conn = watcher.data
         logging.error('ad.on_error : error no response recived %d' % conn.id)
         self.no_resps += 1        
         try:
@@ -124,4 +125,4 @@ class AdServer(object):
             self.conn_pool.append(conn)
             self.conn_use.remove(conn)
         except :
-            pass
+            logging.error('no_response')

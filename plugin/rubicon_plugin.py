@@ -5,8 +5,8 @@ import json
 import os
 import datetime
 
-WIN_PROBABILITY   = 2
-CLICK_PROBABILITY = 5
+WIN_PROBABILITY   = 3
+CLICK_PROBABILITY = 1
 
 BASE_PATH = 'plugin/rubicon_test'
 
@@ -106,7 +106,7 @@ class RubiconPlugin(ParameterPlugin):
         # send the impression event in 0.5 secs
         self.adserver.send_event(buf, 0.5)
         # roll the dice to see if we should click
-        click = random.randint(0, 9) < CLICK_PROBABILITY
+        click = random.randint(0, 100) < CLICK_PROBABILITY
         if not click:
             return (False, '', {}, '')
         #click_req_line = 'POST /click?ev=click' \

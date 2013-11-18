@@ -127,9 +127,8 @@ class Connection(object):
             logging.debug('handling write %d' % self.id)
             self.state = Connection.STATE_CONNECTED
             if not self.buf :
-                self.buf += self.request_cb(self)            
-            logging.debug('sending %s' % self.buf)
-            sent = self.sock.send(self.buf)
+                self.buf += self.request_cb(self)
+            sent = self.sock.send(self.buf.encode('utf-8'))
         except socket.error as err:
             logging.error('handle_write ex')            
             if err.args[0] not in NONBLOCKING:

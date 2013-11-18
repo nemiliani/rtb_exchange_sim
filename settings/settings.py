@@ -53,7 +53,7 @@ KEEP_ALIVE_HTTP_REQUEST = \
 # - logging.INFO
 # - logging.WARNING
 # - logging.ERROR
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 
 # Parameter plugin
 PARAMETER_PLUGIN = RubiconPlugin

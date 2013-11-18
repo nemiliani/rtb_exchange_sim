@@ -1,3 +1,4 @@
+import logging
 
 class RTBRequest(object):
     '''
@@ -13,16 +14,18 @@ class RTBRequest(object):
         self.headers = headers
         self.body = body
 
+    def is_ascii(self, s):
+        return all(ord(c) < 128 for c in s)
+
     def build(self):
-        params = {}
-        params['REQUEST_LINE'] = '%s\r\n' % self.req_line
-        hds = ''
+        hds = '%s\r\n' % self.req_line
         for k,v in self.headers.iteritems():
             hds += '%s: %s\r\n' % (k,v)
-        params['HEADERS'] = '%s\r\n' % hds
-        params['BODY'] = self.body
-        s = self.template.render(**params)[:-1]
-        return s
+        hds += '\r\n%s' % self.body
+        if not self.is_ascii(hds):
+            hds = unicode(hds, 'utf-8')
+        logging.debug('rendering done %s' % type(hds))
+        return hds
 
 if __name__ == '__main__' :
 

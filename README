@@ -1,0 +1,8 @@
+Requirements
+============
+
+- libev (from source, > 4.15)
+- pyev
+- http_parser
+
+
